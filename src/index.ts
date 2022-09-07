@@ -1,4 +1,4 @@
-import { getStockLevel } from './services/stock-level';
+import { getStockLevel } from './functions/stock-level';
 import { stockLevel } from './types/stockLevel.type';
 
 getStockLevel('SAL508741/19/43')
