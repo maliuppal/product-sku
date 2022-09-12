@@ -1,17 +1,19 @@
-import { Transaction } from './../types/transaction.type';
-import { Stock } from './../types/stock.type';
-import { getFileData } from '../utils/common';
-import { getTransactionsData } from './transaction';
-import { stockLevel } from '../types/stockLevel.type';
+import { fetchStocksData } from './stock.service';
+import { fetchTransactionsData } from './transaction.service';
+import { StockLevel } from '../types/StockLevel.type';
+import { Transaction } from '../types/Transaction.type';
+import { Stock } from '../types/Stock.type';
 
-export const getStockLevel = async (sku: string): Promise<stockLevel> => {
+export const getStockLevel = async (sku: string): Promise<StockLevel> => {
     let qty: number = 0;
+    let error: string;
+    let result: StockLevel;
     try {
-        const stockSku: Stock = await getStocksData(sku);
-        const [orderTransactions, refundTransactions] : [Transaction[], Transaction[]] = await getTransactionsData(sku);
+        const stockSku: Stock | undefined = await fetchStocksData(sku);
+        const [orderTransactions, refundTransactions]: [Transaction[], Transaction[]] = await fetchTransactionsData(sku);
 
         if (!stockSku && !orderTransactions.length && !refundTransactions.length) {
-            return Promise.reject(`Sku does not exists!`)
+            throw (`Sku does not exists!`);
         }
         if (stockSku) {
             qty += stockSku.stock;
@@ -24,15 +26,9 @@ export const getStockLevel = async (sku: string): Promise<stockLevel> => {
         refundTransactions.forEach((transaction: Transaction) => {
             qty += transaction.qty;
         });
-    } catch (err) {
-        console.error(`Error occurred while getting stock level: ${err}`);
-        return Promise.reject(`Error occurred in getStockLevel: ${err}`)
+
+    } catch (err: any) {
+        throw new Error(err);
     }
     return { sku, qty };
-};
-
-const getStocksData = async (sku: string): Promise<any> => {
-    const stocks: Stock[] = await getFileData('assets/stock.json');
-    let skuStock: Stock | undefined = stocks.find((stock: Stock) => stock.sku === sku);
-    return skuStock;
 };
